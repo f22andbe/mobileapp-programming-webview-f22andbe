@@ -1,42 +1,85 @@
 
 # Rapport
+- Uppgiften bestod i att visa en extern och en intern hemsida internt i en app. För att åstadkomma detta behövdes ett antal åtgärder vidtas. Nedan följer en beskrivning av de åtgärder som behövde vidtas för att uppfylla uppgiftens krav. 
 
-**Skriv din rapport här!**
+- Jag ändrade taggen app_name i strings.xml till MyWebViewApp.
+- För att appen skulle få tillstånd att komma åt internet lade jag i AndroidManifest.xml till taggen 
+```
+<uses-permission android:name="android.permission.INTERNET" />
+```
 
-_Du kan ta bort all text som finns sedan tidigare_.
-
-## Följande grundsyn gäller dugga-svar:
-
-- Ett kortfattat svar är att föredra. Svar som är längre än en sida text (skärmdumpar och programkod exkluderat) är onödigt långt.
-- Svaret skall ha minst en snutt programkod.
-- Svaret skall inkludera en kort övergripande förklarande text som redogör för vad respektive snutt programkod gör eller som svarar på annan teorifråga.
-- Svaret skall ha minst en skärmdump. Skärmdumpar skall illustrera exekvering av relevant programkod. Eventuell text i skärmdumpar måste vara läsbar.
-- I de fall detta efterfrågas, dela upp delar av ditt svar i för- och nackdelar. Dina för- respektive nackdelar skall vara i form av punktlistor med kortare stycken (3-4 meningar).
-
-Programkod ska se ut som exemplet nedan. Koden måste vara korrekt indenterad då den blir lättare att läsa vilket gör det lättare att hitta syntaktiska fel.
+- För att appen skulle kunna visa websidor så behövde en TextView ändras till en WebView vilket gjordes i activity_main.xml, det krävdes även att den omgivande layouten ändrades från en constraintlayout till en RelativeLayout. Utan ändringen så visades ingenting i den skapade webbvyn. I WebView-taggen så definerade jag attributet android:id="@+id/my_webview", detta för att jag senare skulle kunna instantiera vyn med hjälp av detta id. Jag ändrade även layout-attributen i WebView-taggen till match_parent.
+```
+	<WebView
+        android:id="@+id/my_webview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+```
+- I klassen MainActivity så skapades variablerna webview och webSettings. Den förra krävdes för att kunna lagra en instans av webbvyn vars definition nämndes ovan. Den senare användes för lagra ett medlemsobjekt i WebView-klassen av typen WebSettings som används för manipulera inställningar i instanser av WebView-klassen. 
 
 ```
-function errorCallback(error) {
-    switch(error.code) {
-        case error.PERMISSION_DENIED:
-            // Geolocation API stöds inte, gör något
-            break;
-        case error.POSITION_UNAVAILABLE:
-            // Misslyckat positionsanrop, gör något
-            break;
-        case error.UNKNOWN_ERROR:
-            // Okänt fel, gör något
-            break;
+public class MainActivity extends AppCompatActivity {
+
+    private WebView webview;
+    private WebSettings webSettings;
+```
+
+Webbvyn instantierade sedan med ett anrop till findViewById(R.id.my_webview), där det id som vyn försetts med användes som argument. Vyn kopplades sedan samman med en instans av en WebViewClient, detta för att en hemsida skulle kunna ses direkt i appen istället för att öppnas i en extern webbläsare. 
+
+```
+	webview = (WebView) findViewById(R.id.my_webview); //instantiate webview
+	webview.setWebViewClient(new WebViewClient()); // connect webview to webviewclient
+```
+- För att aktivera javascript anropades setJavaScriptEnabled(true) på det medlemsobjekt i WebView-klassen som tidigare nämndes. Tillgång till detta erhölls via ett anrop till getSettings(). 
+```
+	webSettings = webview.getSettings();
+	webSettings.setJavaScriptEnabled(true);
+``` 
+- För att man skulle kunna gå tillbaka till tidigare sidor med hjälp av androids bakåtknapp  ändrades definitionen av onBackPressed() så att kontroll utfördes huruvuda det gick att backa medelst metoden canGoBack(), om så gick så backades med metoden goBack(), annars avslutades appen.  
+  
+```
+@Override
+    public void onBackPressed(){
+        if(webview.canGoBack()){ //check if you can go back
+            webview.goBack(); // go back
+        } else {
+            super.onBackPressed(); //else exit the app
+        }
     }
-}
+```
+  
+- I metoden onOptionsItemSelected(MenuItem item) så registrerades showExternalWebPage() som händelsehanterare för klick på menyvalet "External Web Page". Metoden var till en början tom och och var tvungen att implementeras vilket gjordes relativt enkelt genom att göra ett anrop till medlemsmetoden loadUrl() med önskad url som argument.
+
+```
+public void showExternalWebPage(){
+        // TODO: Add your code for showing external web page here
+        webview.loadUrl("https://www.duckduckgo.com");
+    }
 ```
 
-Bilder läggs i samma mapp som markdown-filen.
+![](screenshot_external_webpage.png)
+- För menyvalet "Internal Web Page" var dock ingen händelsehanterare registrerad. Det gjordes genom att i onOptionsItemSelected(MenuItem item) anropa showInternalWebpage() om det menyval som hade gjorts hade id action_internal_web
+```
+	if (id == R.id.action_internal_web) {
+	            Log.d("==>","Will display internal web page");
+	            showInternalWebPage();
+	            return true;
+	}
+```
 
-![](android.png)
+- För att få showInternalWebPage() att visa den lokala html-sidan local.html gjordes ett anrop till loadUrl() med en url med det särskilda formatet file:///android_asset/local.html där file:///android_asset/ reprsenterar en asset-katalog som tidigare skapats. För att detta skulle fungera var behövde appen först tillstånd att läsa lokala filer, vilket den gavs med anrop till setAllowFileAccess(true) och setAllowContentAccess(true). 
 
-Läs gärna:
+```
+ 	webSettings.setAllowFileAccess(true);
+ 	webSettings.setAllowContentAccess(true);
+ 	webview.loadUrl("file:///android_asset/local.html");
+```
+![](screenshot_internal_webpage.png)
 
-- Boulos, M.N.K., Warren, J., Gong, J. & Yue, P. (2010) Web GIS in practice VIII: HTML5 and the canvas element for interactive online mapping. International journal of health geographics 9, 14. Shin, Y. &
-- Wunsche, B.C. (2013) A smartphone-based golf simulation exercise game for supporting arthritis patients. 2013 28th International Conference of Image and Vision Computing New Zealand (IVCNZ), IEEE, pp. 459–464.
-- Wohlin, C., Runeson, P., Höst, M., Ohlsson, M.C., Regnell, B., Wesslén, A. (2012) Experimentation in Software Engineering, Berlin, Heidelberg: Springer Berlin Heidelberg.
+
+
+
+
+
+
