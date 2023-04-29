@@ -77,6 +77,7 @@ public void showExternalWebPage(){
 ```
 ![](screenshot_internal_webpage.png)
 
+- **Kommentar:** Jag glömde bort att under arbetets gång kontinuerligt köra *git commit* på små ändringar vilket medför att jag bara har en väldigt stor commit och en liten, jag vill bara notera att jag är medveten om att detta inte är en lämplig arbetsprocess.  
 
 
 
